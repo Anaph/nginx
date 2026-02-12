@@ -22,9 +22,10 @@ ngx_use_pch=`echo $NGX_USE_PCH | sed -e "s/\//$ngx_regex_dirsep/g"`
 cat << END                                                     > $NGX_MAKEFILE
 
 CC =	$CC
-CFLAGS = $CFLAGS
+CFLAGS = $CFLAGS -fPIC
 CPP =	$CPP
 LINK =	$LINK
+AR =	ar
 
 END
 
@@ -225,13 +226,29 @@ ngx_main_link=${MAIN_LINK:+`echo $MAIN_LINK \
 
 cat << END                                                    >> $NGX_MAKEFILE
 
-build:	binary modules manpage
+build:	binary libraries modules manpage
 
 binary:	$NGX_OBJS${ngx_dirsep}nginx$ngx_binext
+
+libraries:	$NGX_OBJS${ngx_dirsep}libnginx.a $NGX_OBJS${ngx_dirsep}libnginx.so
 
 $NGX_OBJS${ngx_dirsep}nginx$ngx_binext:	$ngx_deps$ngx_spacer
 	\$(LINK) $ngx_long_start$ngx_binout$NGX_OBJS${ngx_dirsep}nginx$ngx_binext$ngx_long_cont$ngx_objs$ngx_libs$ngx_link$ngx_main_link
 	$ngx_rcc
+$ngx_long_end
+
+$NGX_OBJS${ngx_dirsep}libnginx.a:	$ngx_deps$ngx_spacer
+	\$(AR) $ngx_long_start -rcs $NGX_OBJS${ngx_dirsep}libnginx.a$ngx_long_cont$ngx_objs
+$ngx_long_end
+
+$NGX_OBJS${ngx_dirsep}libnginx.so:	$ngx_deps$ngx_spacer
+	\$(LINK) -shared $ngx_long_start$ngx_binout$NGX_OBJS${ngx_dirsep}libnginx.so$ngx_long_cont$ngx_objs$ngx_libs$ngx_link
+$ngx_long_end
+
+libtest:	$NGX_OBJS${ngx_dirsep}src${ngx_dirsep}core${ngx_dirsep}ngx_config_lib_test.$ngx_objext
+
+$NGX_OBJS${ngx_dirsep}src${ngx_dirsep}core${ngx_dirsep}ngx_config_lib_test.$ngx_objext:	\$(CORE_DEPS) src/core/ngx_config_lib_test.c$ngx_spacer
+	\$(CC) -c \$(CFLAGS) \$(CORE_INCS) \$(HTTP_INCS) \$(MAIL_INCS) \$(STREAM_INCS)$ngx_tab$ngx_objout$NGX_OBJS${ngx_dirsep}src${ngx_dirsep}core${ngx_dirsep}ngx_config_lib_test.$ngx_objext$ngx_tab src/core/ngx_config_lib_test.c
 $ngx_long_end
 
 modules:
